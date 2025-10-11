@@ -1,0 +1,32 @@
+{
+  "name": "travel-itinerary",
+  "version": "1.0.0",
+  "description": "Travel Itinerary app allows users to create, manage, and share travel itineraries.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Md-Inzemamul-Haque/Travel-itinerary.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Md-Inzemamul-Haque/Travel-itinerary/issues"
+  },
+  "homepage": "https://github.com/Md-Inzemamul-Haque/Travel-itinerary#readme",
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.1.0",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongodb": "^6.20.0",
+    "mongoose": "^8.19.1",
+    "validator": "^13.15.15"
+  },
+  "type": "module"
+}
