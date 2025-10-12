@@ -22,7 +22,7 @@ export const createItinerary = catchAsync(async (req, res, next) => {
 
   if (existingItinerary) {
     return next(
-      new AppError("You already have itinerary which overlaps these dates")
+      new AppError("You already have itinerary which overlaps these dates", 400)
     );
   }
 
@@ -45,13 +45,33 @@ export const createItinerary = catchAsync(async (req, res, next) => {
 export const getAllItinerary = catchAsync(async (req, res, next) => {
   const userId = req.user.id;
 
-  const itineraries = await ItineraryModel.find({
-    userId,
-  });
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+  const sort = req.query.sort;
+  const order = req.query.order === "asc" ? 1 : -1;
+  const sortFilter = sort
+    ? { [sort]: order, _id: 1 }
+    : { createdAt: order, _id: 1 };
+  const destination = req.query.destination;
+  const filter = destination
+    ? { userId, destination: { $regex: destination, $options: "i" } }
+    : { userId };
+
+  const itineraries = await ItineraryModel.find(filter)
+    .skip(skip)
+    .limit(limit)
+    .sort(sortFilter);
+
+  const total = await ItineraryModel.countDocuments({ userId });
+  const totalPages = Math.ceil(total / limit);
 
   res.status(200).json({
     message: itineraries?.length ? "success" : "No itinerary found",
     data: itineraries,
+    page,
+    totalPages,
+    total,
   });
 });
 

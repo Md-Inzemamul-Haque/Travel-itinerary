@@ -4,7 +4,7 @@
   "description": "Travel Itinerary app allows users to create, manage, and share travel itineraries.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest --runInBand"
   },
   "repository": {
     "type": "git",
@@ -28,5 +28,18 @@
     "mongoose": "^8.19.1",
     "validator": "^13.15.15"
   },
-  "type": "module"
+  "type": "module",
+  "jest": {
+    "transform": {
+      "^.+\\.jsx?$": "babel-jest"
+    }
+  },
+  "devDependencies": {
+    "@babel/core": "^7.28.4",
+    "@babel/preset-env": "^7.28.3",
+    "babel-jest": "^30.2.0",
+    "jest": "^30.2.0",
+    "mongodb-memory-server": "^10.2.3",
+    "supertest": "^7.1.4"
+  }
 }

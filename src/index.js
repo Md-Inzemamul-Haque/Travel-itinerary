@@ -6,7 +6,7 @@ const startServer = async () => {
   try {
     await connectDB();
     app.listen(PORT, () => {
-      console.log(`Running in ${process.env.NODE_ENV} mode`);
+      console.log(`Running in ${process.env.NODE_ENV} mode at PORT: ${PORT}`);
     });
   } catch (error) {
     console.error("Error starting server:", error);

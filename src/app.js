@@ -18,12 +18,12 @@ app.use(helmet());
 app.use(express.json());
 app.use(limiter);
 
-app.get("/api", (req, res) => {
+app.get("/", (req, res) => {
   res.send("Travel itinerary is running");
 });
 
-app.use("/auth", userRouter);
-app.use("/itineraries", authMiddleware, itineraryRouter);
+app.use("/api/auth", userRouter);
+app.use("/api/itineraries", authMiddleware, itineraryRouter);
 
 app.use((req, res, next) => {
   next(new AppError(`Route ${req.originalUrl} not found`, 404));
