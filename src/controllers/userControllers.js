@@ -89,9 +89,17 @@ export const loginUser = catchAsync(async (req, res, next) => {
     return next(new AppError("Incorrect password", 401));
   }
 
-  const token = jwt.sign({ id: existingUser._id }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN,
-  });
+  const token = jwt.sign(
+    {
+      id: existingUser._id,
+      email: existingUser.email,
+      name: existingUser.first_name,
+    },
+    process.env.JWT_SECRET,
+    {
+      expiresIn: process.env.JWT_EXPIRES_IN,
+    }
+  );
 
   res.status(200).json({
     status: "success",

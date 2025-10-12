@@ -1,7 +1,9 @@
 import redisClient from "../../config/redisClient.js";
 import { ItineraryModel } from "../models/ItineraryModel.js";
+import { sendEmail } from "../services/mailService.js";
 import { AppError } from "../utils/AppError.js";
 import { catchAsync } from "../utils/catchAsync.js";
+import { shareLinkGenerator } from "../utils/common.js";
 
 export const createItinerary = catchAsync(async (req, res, next) => {
   const userId = req.user.id;
@@ -27,7 +29,7 @@ export const createItinerary = catchAsync(async (req, res, next) => {
     );
   }
 
-  const newItinerary = await ItineraryModel.create({
+  let newItinerary = await ItineraryModel.create({
     userId,
     title,
     destination,
@@ -35,6 +37,27 @@ export const createItinerary = catchAsync(async (req, res, next) => {
     endDate,
     activities,
     status: true,
+  });
+
+  newItinerary = newItinerary.toObject();
+  const shareLink = shareLinkGenerator(newItinerary._id);
+
+  sendEmail({
+    to: req.user.email,
+    subject: "Itinerary created",
+    text: `Hi ${req.user.name},
+
+    Your itinerary "${title}" is successfully created.
+
+    Have a great journey,
+    Team Travel Itinerary App`,
+    html: `<p>Hi ${req.user.name},</p>
+
+    <p>Your itinerary "<strong>${title}</strong>" is successfully created.</p>
+    <p>Itinerary Link: ${shareLink}</p>
+
+    <p>Have a great journey,<br/>
+    <strong>Team Travel Itinerary APP</strong></p>`,
   });
 
   return res.status(201).json({
@@ -86,7 +109,7 @@ export const getItineraryById = catchAsync(async (req, res, next) => {
   }
 
   if (req.query.share == "true") {
-    const shareLink = `http://${process.env.HOST}:${process.env.PORT}/api/itineraries/share/${itineraryId}`;
+    const shareLink = shareLinkGenerator(itineraryId);
     return res.status(200).json({
       message: "Share link generated",
       data: shareLink,
@@ -96,15 +119,16 @@ export const getItineraryById = catchAsync(async (req, res, next) => {
   const cachedData = await redisClient.get(itineraryId);
 
   if (cachedData) {
-    itinerary = [JSON.parse(cachedData)];
+    itinerary = JSON.parse(cachedData);
   } else {
-    itinerary = await ItineraryModel.find({
+    itinerary = await ItineraryModel.findOne({
       userId,
       _id: itineraryId,
       status: true,
     });
 
-    if (itinerary.length > 0) {
+    if (itinerary) {
+      itinerary = itinerary.toObject();
       await redisClient.set(itineraryId, JSON.stringify(itinerary), {
         EX: 300,
       });
@@ -112,7 +136,7 @@ export const getItineraryById = catchAsync(async (req, res, next) => {
   }
 
   return res.status(200).json({
-    message: itinerary?.length ? "success" : "No itinerary found",
+    message: itinerary ? "success" : "No itinerary found",
     data: itinerary,
   });
 });
@@ -193,6 +217,7 @@ export const deleteItinerary = catchAsync(async (req, res, next) => {
 
   return res.status(200).json({
     status: "success",
+    message: "Itinerary deleted",
   });
 });
 
@@ -209,15 +234,24 @@ export const getSharedItineraryById = catchAsync(async (req, res, next) => {
   if (cachedData) {
     itinerary = JSON.parse(cachedData);
   } else {
-    itinerary = await ItineraryModel.find({
+    itinerary = await ItineraryModel.findOne({
       _id: itineraryId,
       status: true,
     });
-    redisClient.set(itineraryId, JSON.stringify(itinerary), { EXP: 300 });
+    if (itinerary) {
+      itinerary = itinerary.toObject();
+      redisClient.set(itineraryId, JSON.stringify(itinerary), { EXP: 300 });
+    }
+  }
+
+  if (itinerary) {
+    delete itinerary._id;
+    delete itinerary.userId;
+    delete itinerary.__v;
   }
 
   return res.status(200).json({
-    message: "success",
+    message: itinerary ? "success" : "No itinerary found",
     data: itinerary,
   });
 });
