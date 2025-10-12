@@ -37,7 +37,7 @@ export const createItinerary = catchAsync(async (req, res, next) => {
     status: true,
   });
 
-  res.status(201).json({
+  return res.status(201).json({
     status: "success",
     data: newItinerary,
   });
@@ -67,7 +67,7 @@ export const getAllItinerary = catchAsync(async (req, res, next) => {
   const total = await ItineraryModel.countDocuments({ userId });
   const totalPages = Math.ceil(total / limit);
 
-  res.status(200).json({
+  return res.status(200).json({
     message: itineraries?.length ? "success" : "No itinerary found",
     data: itineraries,
     page,
@@ -85,10 +85,18 @@ export const getItineraryById = catchAsync(async (req, res, next) => {
     return next(new AppError("Itinerary Id missing", 400));
   }
 
-  const cahedData = await redisClient.get(itineraryId);
+  if (req.query.share == "true") {
+    const shareLink = `http://${process.env.HOST}:${process.env.PORT}/api/itineraries/share/${itineraryId}`;
+    return res.status(200).json({
+      message: "Share link generated",
+      data: shareLink,
+    });
+  }
 
-  if (cahedData) {
-    itinerary = [JSON.parse(cahedData)];
+  const cachedData = await redisClient.get(itineraryId);
+
+  if (cachedData) {
+    itinerary = [JSON.parse(cachedData)];
   } else {
     itinerary = await ItineraryModel.find({
       userId,
@@ -103,7 +111,7 @@ export const getItineraryById = catchAsync(async (req, res, next) => {
     }
   }
 
-  res.status(200).json({
+  return res.status(200).json({
     message: itinerary?.length ? "success" : "No itinerary found",
     data: itinerary,
   });
@@ -154,7 +162,7 @@ export const updateItinerary = catchAsync(async (req, res, next) => {
   await itinerary.save();
   await redisClient.set(itineraryId, JSON.stringify(itinerary), { EX: 300 });
 
-  res.status(201).json({
+  return res.status(201).json({
     status: "success",
     data: itinerary,
   });
@@ -185,5 +193,31 @@ export const deleteItinerary = catchAsync(async (req, res, next) => {
 
   return res.status(200).json({
     status: "success",
+  });
+});
+
+export const getSharedItineraryById = catchAsync(async (req, res, next) => {
+  const itineraryId = req.params.shareableId;
+  let itinerary;
+
+  if (!itineraryId) {
+    return next(new AppError("Itinerary Id missing", 400));
+  }
+
+  const cachedData = await redisClient.get(itineraryId);
+
+  if (cachedData) {
+    itinerary = JSON.parse(cachedData);
+  } else {
+    itinerary = await ItineraryModel.find({
+      _id: itineraryId,
+      status: true,
+    });
+    redisClient.set(itineraryId, JSON.stringify(itinerary), { EXP: 300 });
+  }
+
+  return res.status(200).json({
+    message: "success",
+    data: itinerary,
   });
 });

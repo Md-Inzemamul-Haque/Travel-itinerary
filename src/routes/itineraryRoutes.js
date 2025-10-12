@@ -4,6 +4,7 @@ import {
   deleteItinerary,
   getAllItinerary,
   getItineraryById,
+  getSharedItineraryById,
   updateItinerary,
 } from "../controllers/itineraryControllers.js";
 
@@ -14,3 +15,4 @@ itineraryRouter.get("/", getAllItinerary);
 itineraryRouter.get("/:id", getItineraryById);
 itineraryRouter.put("/:id", updateItinerary);
 itineraryRouter.delete("/:id", deleteItinerary);
+itineraryRouter.get("/share/:shareableId", getSharedItineraryById);

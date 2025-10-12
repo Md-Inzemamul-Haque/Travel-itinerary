@@ -3,6 +3,15 @@ import { AppError } from "../utils/AppError.js";
 
 export const authMiddleware = async (req, res, next) => {
   const authHeader = req.headers.authorization;
+  const openRoutes = ["/api/itineraries/share"];
+
+  const isOpenRoute = openRoutes.some((route) =>
+    req.originalUrl.startsWith(route)
+  );
+
+  if (isOpenRoute) {
+    return next();
+  }
 
   if (!authHeader?.startsWith("Bearer "))
     return next(new AppError("Authorization token error", 401));
