@@ -1,3 +1,4 @@
+import redisClient from "../../config/redisClient.js";
 import { ItineraryModel } from "../models/ItineraryModel.js";
 import { AppError } from "../utils/AppError.js";
 import { catchAsync } from "../utils/catchAsync.js";
@@ -78,20 +79,33 @@ export const getAllItinerary = catchAsync(async (req, res, next) => {
 export const getItineraryById = catchAsync(async (req, res, next) => {
   const userId = req.user.id;
   const itineraryId = req.params.id;
+  let itinerary;
 
   if (!itineraryId) {
     return next(new AppError("Itinerary Id missing", 400));
   }
 
-  const itineraries = await ItineraryModel.find({
-    userId,
-    _id: itineraryId,
-    status: true,
-  });
+  const cahedData = await redisClient.get(itineraryId);
+
+  if (cahedData) {
+    itinerary = [JSON.parse(cahedData)];
+  } else {
+    itinerary = await ItineraryModel.find({
+      userId,
+      _id: itineraryId,
+      status: true,
+    });
+
+    if (itinerary.length > 0) {
+      await redisClient.set(itineraryId, JSON.stringify(itinerary), {
+        EX: 300,
+      });
+    }
+  }
 
   res.status(200).json({
-    message: itineraries?.length ? "success" : "No itinerary found",
-    data: itineraries,
+    message: itinerary?.length ? "success" : "No itinerary found",
+    data: itinerary,
   });
 });
 
@@ -138,6 +152,7 @@ export const updateItinerary = catchAsync(async (req, res, next) => {
   if (activities) itinerary.activities = activities;
 
   await itinerary.save();
+  await redisClient.set(itineraryId, JSON.stringify(itinerary), { EX: 300 });
 
   res.status(201).json({
     status: "success",
@@ -160,11 +175,13 @@ export const deleteItinerary = catchAsync(async (req, res, next) => {
   });
 
   if (!itinerary) {
+    redisClient.del(itineraryId);
     return next(new AppError("Itinerary not found", 404));
   }
 
   itinerary.status = false;
   itinerary.save();
+  redisClient.del(itineraryId);
 
   return res.status(200).json({
     status: "success",
