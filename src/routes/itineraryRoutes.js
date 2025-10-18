@@ -3,6 +3,7 @@ import {
   createItinerary,
   deleteItinerary,
   getAllItinerary,
+  getAllUserItineraryCount,
   getItineraryById,
   getSharedItineraryById,
   updateItinerary,
@@ -16,3 +17,4 @@ itineraryRouter.get("/:id", getItineraryById);
 itineraryRouter.put("/:id", updateItinerary);
 itineraryRouter.delete("/:id", deleteItinerary);
 itineraryRouter.get("/share/:shareableId", getSharedItineraryById);
+itineraryRouter.get("/public/get-all-user-itinerary-count", getAllUserItineraryCount);

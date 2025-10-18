@@ -1,5 +1,6 @@
 import redisClient from "../../config/redisClient.js";
 import { ItineraryModel } from "../models/ItineraryModel.js";
+import { UserModel } from "../models/UserModel.js";
 import { sendEmail } from "../services/mailService.js";
 import { AppError } from "../utils/AppError.js";
 import { catchAsync } from "../utils/catchAsync.js";
@@ -253,5 +254,41 @@ export const getSharedItineraryById = catchAsync(async (req, res, next) => {
   return res.status(200).json({
     message: itinerary ? "success" : "No itinerary found",
     data: itinerary,
+  });
+});
+
+export const getAllUserItineraryCount = catchAsync(async (req, res) => {
+  const itineraries = await ItineraryModel.find();
+
+  if (itineraries.length === 0) {
+    throw new AppError("No itinerary foud", 400);
+  }
+
+  const userDetais = await UserModel.find();
+  let userIdMap = {};
+  userDetais.map((user) => {
+    userIdMap[user._id] = user.first_name;
+  });
+  let userItineraryMap = {};
+
+  itineraries.forEach((itinerary) => {
+    if (!userItineraryMap[itinerary.userId]) {
+      userItineraryMap[itinerary.userId] = {
+        name: userIdMap[itinerary.userId],
+        count: 1,
+      };
+    } else {
+      userItineraryMap[itinerary.userId].count++;
+    }
+  });
+
+  let result = {};
+  Object.values(userItineraryMap).forEach((user) => {
+    result[user.name] = user.count;
+  });
+
+  return res.status(200).json({
+    status: "success",
+    data: result,
   });
 });
